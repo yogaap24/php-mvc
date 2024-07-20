@@ -1,6 +1,6 @@
 <?php
 
-namespace Yogaap\PHP\MVC\Middleware;
+namespace Yogaap\PHP\MVC\Http\Controllers;
 
 use Yogaap\PHP\MVC\App\View;
 use Yogaap\PHP\MVC\Config\Database;
@@ -8,8 +8,9 @@ use Yogaap\PHP\MVC\Repository\SessionRepository;
 use Yogaap\PHP\MVC\Repository\UserRepository;
 use Yogaap\PHP\MVC\Services\Session\SessionService;
 
-class AuthMiddleware implements Middleware
+class HomeController
 {
+
     private SessionService $sessionService;
 
     public function __construct()
@@ -19,22 +20,20 @@ class AuthMiddleware implements Middleware
         $userRepository = new UserRepository($connection);
         $this->sessionService = new SessionService($sessionRepository, $userRepository);
     }
-    
-    function before() : void
+
+    function index() : void
     {
-        $user = $this->sessionService->current();
-        $path = $_SERVER['REQUEST_URI'];
+        $response = [
+            "title" => "PHP MVC Stupid Simple Framework",
+        ];
 
-        $allowRoutes = ['/users/login', '/users/register'];
+        View::render('Home/index', $response);
+    }
 
-        if (!$user && !in_array($path, $allowRoutes)) {
-            View::redirect('/users/login', [
-                "error" => "You need to login first"
-            ]);
-        }
-
-        if ($user && in_array($path, $allowRoutes)) {
-            View::redirect('/home/dashboard');
-        }
+    function dashboard() : void
+    {
+        View::render('Home/dashboard', [
+            "title" => "Dashboard"
+        ]);
     }
 }
