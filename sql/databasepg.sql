@@ -1,8 +1,8 @@
 -- Create database if not exists
-CREATE DATABASE php_mvc_test;
+CREATE DATABASE php_mvc;
 
 -- Connect to the database
-\c php_mvc_test
+\c php_mvc
 
 -- Create users table if not exists
 CREATE TABLE IF NOT EXISTS users (
