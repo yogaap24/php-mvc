@@ -9,6 +9,7 @@ This PHP MVC Framework is a custom implementation of the Model-View-Controller p
      ```sh
      git clone https://github.com/yogaap24/php-mvc.git
      cd php-mvc
+     remove folder .git
      ```
 
 2. **Set Up the Database**
