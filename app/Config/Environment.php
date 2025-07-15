@@ -6,7 +6,7 @@ class Environment
 {
     private static ?array $variables = null;
 
-    public static function load(string $path = null): void
+    public static function load(): void
     {
         if (self::$variables !== null) {
             return;
