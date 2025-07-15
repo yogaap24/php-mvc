@@ -1,0 +1,54 @@
+#!/usr/bin/env php
+<?php
+
+use Yogaap\PHP\MVC\Console\MigrateCommand;
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+$command = $argv[1] ?? 'help';
+
+// Parse command with colon notation
+if (strpos($command, ':') !== false) {
+    [$namespace, $action] = explode(':', $command, 2);
+    $argv[1] = $action;
+} else {
+    $namespace = $command;
+    $action = $command;
+}
+
+try {
+    switch ($namespace) {
+        case 'migrate':
+            $migrateCommand = new MigrateCommand();
+            $migrateCommand->run($argv);
+            break;
+
+        case 'help':
+        default:
+            showMainHelp();
+            break;
+    }
+} catch (Exception $e) {
+    echo "❌ Error: " . $e->getMessage() . "\n";
+    exit(1);
+}
+
+function showMainHelp(): void
+{
+    echo "\n";
+    echo "🚀 PHP MVC Console\n";
+    echo "==================\n\n";
+    echo "Available commands:\n";
+    echo "  migrate              - Run all pending migrations\n";
+    echo "  migrate:rollback     - Rollback a specific migration\n";
+    echo "  migrate:status       - Show migration status\n";
+    echo "  migrate:fresh        - Drop all tables and run migrations\n";
+    echo "  help                 - Show this help message\n\n";
+    echo "Usage:\n";
+    echo "  php console <command> [options]\n\n";
+    echo "Examples:\n";
+    echo "  php console migrate\n";
+    echo "  php console migrate:status\n";
+    echo "  php console migrate:rollback 001_create_users.sql\n";
+    echo "  php console migrate:fresh\n\n";
+}

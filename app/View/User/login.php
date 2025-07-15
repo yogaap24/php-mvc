@@ -20,6 +20,10 @@
         </div>
         <div class="col-md-10 mx-auto col-lg-5">
             <form class="p-4 p-md-5 border rounded-3 bg-light" method="post" action="/users/login">
+                <?php
+                use Yogaap\PHP\MVC\Helper\CSRFToken;
+                echo CSRFToken::getHiddenInput();
+                ?>
                 <div class="form-floating mb-3">
                     <input name="email" type="text" class="form-control" id="email" placeholder="email" value="<?= $_POST["email"] ?? "" ?>">
                     <label for="email">Email</label>

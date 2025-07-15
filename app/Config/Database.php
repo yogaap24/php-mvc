@@ -2,8 +2,6 @@
 
 namespace Yogaap\PHP\MVC\Config;
 
-use Symfony\Component\Yaml\Yaml;
-
 class Database
 {
     private static ?\PDO $instance = null;
@@ -11,24 +9,60 @@ class Database
     public static function getConnection(): \PDO
     {
         if (self::$instance === null) {
-            $config = self::loadConfig();
+            Environment::load();
 
-            $pdoConfig = $config['database'];
+            $driver = Environment::get('DB_DRIVER', 'mysql');
+            $host = Environment::get('DB_HOST', '127.0.0.1');
+            $port = Environment::get('DB_PORT', '3306');
+            $database = Environment::get('DB_DATABASE', 'php_mvc');
+            $username = Environment::get('DB_USERNAME', 'root');
+            $password = Environment::get('DB_PASSWORD', '');
 
-            $url = "mysql:host={$pdoConfig['host']}:{$pdoConfig['port']};dbname={$pdoConfig['db_name']}";
-            $username = $pdoConfig['user'];
-            $password = $pdoConfig['password'];
+            $dsn = self::buildDsn($driver, $host, $port, $database);
+            $options = self::getConnectionOptions($driver);
 
-            self::$instance = new \PDO($url, $username, $password);
+            self::$instance = new \PDO($dsn, $username, $password, $options);
         }
 
         return self::$instance;
     }
 
-    private static function loadConfig(): array
+    private static function buildDsn(string $driver, string $host, string $port, string $database): string
     {
-        $configFile = __DIR__ . '/../../config.yml';
-        return Yaml::parseFile($configFile);
+        switch ($driver) {
+            case 'pgsql':
+            case 'postgres':
+                return "pgsql:host={$host};port={$port};dbname={$database};options='--client_encoding=UTF8'";
+
+            case 'sqlite':
+                return "sqlite:{$database}";
+
+            case 'mysql':
+            default:
+                return "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
+        }
+    }
+
+    private static function getConnectionOptions(string $driver): array
+    {
+        $baseOptions = [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            \PDO::ATTR_EMULATE_PREPARES => false,
+        ];
+
+        switch ($driver) {
+            case 'mysql':
+                $baseOptions[\PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci";
+                break;
+
+            case 'pgsql':
+            case 'postgres':
+                // PostgreSQL specific options if needed
+                break;
+        }
+
+        return $baseOptions;
     }
 
     public static function beginTransaction(){

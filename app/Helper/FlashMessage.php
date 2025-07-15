@@ -5,37 +5,62 @@ namespace Yogaap\PHP\MVC\Helper;
 class FlashMessage
 {
     private const FLASH_KEY = 'flash_messages';
-    private const COOKIE_EXPIRY = 5; // Cookie expires in 5 seconds
 
     public static function addMessage(string $type, string $message): void
     {
-        $flashMessages = self::getFlashMessages();
-        $flashMessages[$type] = $message; // Hanya menyimpan satu pesan per tipe
+        self::startSession();
 
-        // Set cookie dengan pesan flash
-        setcookie(self::FLASH_KEY, json_encode($flashMessages), time() + self::COOKIE_EXPIRY, "/");
+        if (!isset($_SESSION[self::FLASH_KEY])) {
+            $_SESSION[self::FLASH_KEY] = [];
+        }
+
+        $_SESSION[self::FLASH_KEY][$type] = $message;
     }
 
     public static function getMessages(): array
     {
-        if (!isset($_COOKIE[self::FLASH_KEY])) {
+        self::startSession();
+
+        if (!isset($_SESSION[self::FLASH_KEY])) {
             return [];
         }
 
-        $flashMessages = json_decode($_COOKIE[self::FLASH_KEY], true) ?? [];
-        // Clear messages after retrieval
-        self::clearMessages();
+        $messages = $_SESSION[self::FLASH_KEY];
+        unset($_SESSION[self::FLASH_KEY]);
 
-        return $flashMessages;
+        return $messages;
     }
 
-    private static function clearMessages(): void
+    public static function hasMessages(): bool
     {
-        setcookie(self::FLASH_KEY, '', time() - 3600, "/"); // Hapus cookie
+        self::startSession();
+        return isset($_SESSION[self::FLASH_KEY]) && !empty($_SESSION[self::FLASH_KEY]);
     }
 
-    private static function getFlashMessages(): array
+    public static function getMessage(string $type): ?string
     {
-        return isset($_COOKIE[self::FLASH_KEY]) ? json_decode($_COOKIE[self::FLASH_KEY], true) : [];
+        self::startSession();
+
+        if (!isset($_SESSION[self::FLASH_KEY][$type])) {
+            return null;
+        }
+
+        $message = $_SESSION[self::FLASH_KEY][$type];
+        unset($_SESSION[self::FLASH_KEY][$type]);
+
+        return $message;
+    }
+
+    public static function clearMessages(): void
+    {
+        self::startSession();
+        unset($_SESSION[self::FLASH_KEY]);
+    }
+
+    private static function startSession(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
     }
 }

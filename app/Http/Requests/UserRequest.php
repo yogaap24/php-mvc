@@ -2,6 +2,8 @@
 
 namespace Yogaap\PHP\MVC\Http\Requests;
 
+use Yogaap\PHP\MVC\Helper\ValidationRules;
+
 class UserRequest
 {
     public ?string $id = null;
@@ -13,29 +15,85 @@ class UserRequest
 
     public function validate(): array
     {
-        $errors = [];
-        // Validate Email
-        if (!is_null($this->email) && empty($this->email)) {
-            $errors['email'] = 'Email is required.';
-        } elseif (!is_null($this->email) && !filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Invalid email format.';
+        $validator = new ValidationRules();
+        $data = $this->toArray();
+
+        $rules = $this->getRules();
+        $messages = $this->getMessages();
+
+        $errors = $validator->validate($data, $rules, $messages);
+
+        // Flatten errors array to match original format
+        $flatErrors = [];
+        foreach ($errors as $field => $fieldErrors) {
+            $flatErrors[$field] = $fieldErrors[0]; // Take first error only
         }
 
-        // Validate Password
-        if (!is_null($this->password) && empty($this->password)) {
-            $errors['password'] = 'Password is required.';
-        } elseif (!is_null($this->password) && strlen($this->password) < 6) {
-            $errors['password'] = 'Password must be at least 6 characters long.';
-        } elseif (!is_null($this->confirmPassword) && !is_null($this->password) && $this->password !== $this->confirmPassword) {
-            $errors['password'] = 'Password does not match.';
-        } elseif (!is_null($this->newPassword) && strlen($this->newPassword) < 6) {
-            $errors['password'] = 'New password must be at least 6 characters long.';
-        } elseif (!is_null($this->newPassword) && $this->newPassword === $this->oldPassword) {
-            $errors['password'] = 'New password must be different from the old password.';
-        } elseif (!is_null($this->newPassword) && !is_null($this->confirmPassword) && $this->newPassword !== $this->confirmPassword) {
-            $errors['password'] = 'New password does not match.';
+        return $flatErrors;
+    }
+
+    private function getRules(): array
+    {
+        $rules = [];
+
+        // Email validation
+        if ($this->email !== null) {
+            $rules['email'] = ['required', 'email', 'max:255'];
         }
 
-        return $errors;
+        // Password validation for registration/login
+        if ($this->password !== null) {
+            $rules['password'] = ['required', 'min:6'];
+
+            if ($this->confirmPassword !== null) {
+                $rules['password'][] = 'same:confirmPassword';
+            }
+        }
+
+        // Old password validation
+        if ($this->oldPassword !== null) {
+            $rules['oldPassword'] = ['required', 'min:6'];
+        }
+
+        // New password validation
+        if ($this->newPassword !== null) {
+            $rules['newPassword'] = ['required', 'min:6', 'different:oldPassword'];
+
+            if ($this->confirmPassword !== null) {
+                $rules['newPassword'][] = 'same:confirmPassword';
+            }
+        }
+
+        return $rules;
+    }
+
+    private function getMessages(): array
+    {
+        return [
+            'email.required' => 'Email is required.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.max' => 'Email must not exceed 255 characters.',
+            'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 6 characters long.',
+            'password.same' => 'Password confirmation does not match.',
+            'oldPassword.required' => 'Current password is required.',
+            'oldPassword.min' => 'Current password must be at least 6 characters long.',
+            'newPassword.required' => 'New password is required.',
+            'newPassword.min' => 'New password must be at least 6 characters long.',
+            'newPassword.different' => 'New password must be different from current password.',
+            'newPassword.same' => 'New password confirmation does not match.',
+        ];
+    }
+
+    private function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'password' => $this->password,
+            'confirmPassword' => $this->confirmPassword,
+            'oldPassword' => $this->oldPassword,
+            'newPassword' => $this->newPassword,
+        ];
     }
 }

@@ -3,6 +3,7 @@
 namespace Yogaap\PHP\MVC\Services\Session;
 
 use Ulid\Ulid;
+use Yogaap\PHP\MVC\Config\Environment;
 use Yogaap\PHP\MVC\Domain\Session;
 use Yogaap\PHP\MVC\Domain\User;
 use Yogaap\PHP\MVC\Repository\SessionRepository;
@@ -10,9 +11,6 @@ use Yogaap\PHP\MVC\Repository\UserRepository;
 
 class SessionService
 {
-
-    public static string $COOKIE_NAME = "X-YOGAAP-SESSION";
-
     private SessionRepository $sessionRepository;
     private UserRepository $userRepository;
 
@@ -20,9 +18,30 @@ class SessionService
     {
         $this->sessionRepository = $sessionRepository;
         $this->userRepository = $userRepository;
+        $this->startSession();
     }
 
-    public function store(string $user_id) : Session
+    private function startSession(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            $cookieName = Environment::get('SESSION_COOKIE_NAME', 'X-YOGAAP-SESSION');
+            $lifetime = (int) Environment::get('SESSION_LIFETIME', 43200);
+
+            session_set_cookie_params([
+                'lifetime' => $lifetime,
+                'path' => '/',
+                'domain' => '',
+                'secure' => isset($_SERVER['HTTPS']),
+                'httponly' => true,
+                'samesite' => 'Strict'
+            ]);
+
+            session_name($cookieName);
+            session_start();
+        }
+    }
+
+    public function store(string $user_id): Session
     {
         $session = new Session();
         $session->id = Ulid::generate();
@@ -30,34 +49,56 @@ class SessionService
 
         $this->sessionRepository->save($session);
 
-        setcookie(self::$COOKIE_NAME, $session->id, time() + (60 * 60 * 12 * 30), "/");
+        $_SESSION['session_id'] = $session->id;
+        $_SESSION['user_id'] = $user_id;
+        $_SESSION['last_activity'] = time();
 
         return $session;
     }
 
-    public function destroy() 
+    public function destroy(): void
     {
-        $session_id = $_COOKIE[self::$COOKIE_NAME] ?? null;
-        if ($session_id) {
-            $this->sessionRepository->deleteSession($session_id);
+        $sessionId = $_SESSION['session_id'] ?? null;
+
+        if ($sessionId) {
+            $this->sessionRepository->deleteSession($sessionId);
         }
 
-        setcookie(self::$COOKIE_NAME, '', time() - 1, "/");
-
+        session_destroy();
+        session_start();
+        session_regenerate_id(true);
     }
 
-    public function current() : ?User
+    public function current(): ?User
     {
-        $session_id = $_COOKIE[self::$COOKIE_NAME] ?? null;
-        if (!$session_id) {
+        $sessionId = $_SESSION['session_id'] ?? null;
+        $lastActivity = $_SESSION['last_activity'] ?? 0;
+
+        if (!$sessionId) {
             return null;
         }
 
-        $session = $this->sessionRepository->findSession($session_id);
+        // Check session timeout
+        $lifetime = (int) Environment::get('SESSION_LIFETIME', 43200);
+        if ((time() - $lastActivity) > $lifetime) {
+            $this->destroy();
+            return null;
+        }
+
+        $session = $this->sessionRepository->findSession($sessionId);
         if (!$session) {
+            $this->destroy();
             return null;
         }
 
-        return $this->userRepository->findUser($session->user_id);
+        // Update last activity
+        $_SESSION['last_activity'] = time();
+
+        return $this->userRepository->findUserById($session->user_id);
+    }
+
+    public function regenerate(): void
+    {
+        session_regenerate_id(true);
     }
 }

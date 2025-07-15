@@ -28,11 +28,58 @@ class UserRepository
 
     public function findUser(string $identifier): ?User
     {
+        // Determine if identifier is email or ID
         $column = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'id';
 
-        $sql = 'SELECT * FROM users WHERE ' . $column . ' = :' . $column;
+        $sql = "SELECT id, email, password FROM users WHERE {$column} = ?";
         $statement = $this->connection->prepare($sql);
-        $statement->execute([$column => $identifier]);
+        $statement->execute([$identifier]);
+
+        try {
+            $row = $statement->fetch();
+            if (!$row) {
+                return null;
+            }
+
+            $user = new User();
+            $user->id = $row['id'];
+            $user->email = $row['email'];
+            $user->password = $row['password'];
+
+            return $user;
+        } finally {
+            $statement->closeCursor();
+        }
+    }
+
+    public function findUserByEmail(string $email): ?User
+    {
+        $sql = "SELECT id, email, password FROM users WHERE email = ?";
+        $statement = $this->connection->prepare($sql);
+        $statement->execute([$email]);
+
+        try {
+            $row = $statement->fetch();
+            if (!$row) {
+                return null;
+            }
+
+            $user = new User();
+            $user->id = $row['id'];
+            $user->email = $row['email'];
+            $user->password = $row['password'];
+
+            return $user;
+        } finally {
+            $statement->closeCursor();
+        }
+    }
+
+    public function findUserById(string $id): ?User
+    {
+        $sql = "SELECT id, email, password FROM users WHERE id = ?";
+        $statement = $this->connection->prepare($sql);
+        $statement->execute([$id]);
 
         try {
             $row = $statement->fetch();
