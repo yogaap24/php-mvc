@@ -88,7 +88,9 @@ class Migration
         $statement->execute([$migrationName]);
 
         return $statement->fetchColumn() > 0;
-    }    private function executeMigration(string $filePath, string $migrationName): void
+    }
+
+    private function executeMigration(string $filePath, string $migrationName): void
     {
         $sql = file_get_contents($filePath);
 
