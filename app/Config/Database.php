@@ -1,6 +1,8 @@
 <?php
 
-namespace Yogaap\PHP\MVC\Config;
+namespace App\Config;
+
+use App\Config\Environment;
 
 class Database
 {

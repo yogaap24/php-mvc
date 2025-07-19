@@ -1,31 +1,33 @@
 {
-    "name": "yogaap/php-mvc",
-    "description": "Template PHP MVC",
+    "name": "yogaap/php-mvc-modular",
+    "description": "Modular PHP MVC Framework",
     "type": "project",
-    "authors": [
-        {
-            "name": "yogaap24"
-        }
-    ],
     "require": {
-        "php": ">=8.0",
-        "ramsey/uuid": "^4.7",
-        "robinvdvleuten/ulid": "^5.0"
+        "php": ">=8.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5.8"
+        "phpunit/phpunit": "^9.0"
     },
     "autoload": {
         "psr-4": {
-            "Yogaap\\PHP\\MVC\\": "app"
-        },
-        "files": [
-            "app/bootstrap.php"
-        ]
+            "Core\\": "core/",
+            "Modules\\": "modules/",
+            "App\\": "app/"
+        }
     },
     "autoload-dev": {
         "psr-4": {
-            "Yogaap\\PHP\\MVC\\Tests\\": "tests"
+            "Tests\\": "tests/"
         }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "scripts": {
+        "dump-autoload": "composer dump-autoload -o",
+        "test": "phpunit",
+        "migrate": "php console migrate"
     }
 }

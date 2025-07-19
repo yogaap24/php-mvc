@@ -1,6 +1,6 @@
 <?php
 
-namespace Yogaap\PHP\MVC\Config;
+namespace App\Config;
 
 class Environment
 {
@@ -12,7 +12,7 @@ class Environment
             return;
         }
 
-        $envFile = $path ?? __DIR__ . '/../../.env';
+        $envFile = __DIR__ . '/../../.env';
 
         if (!file_exists($envFile)) {
             throw new \Exception('.env file not found');

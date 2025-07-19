@@ -1,31 +1,34 @@
 <?php
 
-use Yogaap\PHP\MVC\App\Router;
-use Yogaap\PHP\MVC\Http\Controllers\HomeController;
-use Yogaap\PHP\MVC\Http\Controllers\UserController;
-use Yogaap\PHP\MVC\Middleware\AuthMiddleware;
-use Yogaap\PHP\MVC\Middleware\CSRFMiddleware;
+use Core\Http\Router;
 
-Router::add('GET', '/', HomeController::class, 'index');
+// Public routes
+Router::get('/', 'Modules\Home\Controller\HomeController@index');
 
-Router::group(['middlewares' => [AuthMiddleware::class]], function () {
-    Router::group(['prefix' => 'users', 'controller' => UserController::class], function () {
-        Router::add('GET', '/login', 'loginPage');
-        Router::add('POST', '/login', 'login', '', [CSRFMiddleware::class]);
+// User authentication routes (no auth middleware needed for login/register)
+Router::group(['prefix' => 'users'], function() {
+    Router::get('/login', 'Modules\User\Controller\UserController@loginPage');
+    Router::post('/login', 'Modules\User\Controller\UserController@login');
 
-        Router::add('GET', '/register', 'registerPage');
-        Router::add('POST', '/register', 'register', '', [CSRFMiddleware::class]);
+    Router::get('/register', 'Modules\User\Controller\UserController@registerPage');
+    Router::post('/register', 'Modules\User\Controller\UserController@register');
 
-        Router::add('GET', '/profile', 'profilePage');
-        Router::add('POST', '/profile/{id}', 'profile', '', [CSRFMiddleware::class]);
+    Router::get('/logout', 'Modules\User\Controller\UserController@logout');
+});
 
-        Router::add('GET', '/password', 'passwordPage');
-        Router::add('POST', '/password/{id}', 'password', '', [CSRFMiddleware::class]);
+// Protected routes
+Router::group(['middleware' => ['Core\Middleware\AuthMiddleware']], function() {
+    // User profile routes
+    Router::group(['prefix' => 'users'], function() {
+        Router::get('/profile', 'Modules\User\Controller\UserController@profilePage');
+        Router::post('/profile', 'Modules\User\Controller\UserController@profile');
 
-        Router::add('GET', '/logout', 'logout');
+        Router::get('/password', 'Modules\User\Controller\UserController@passwordPage');
+        Router::post('/password', 'Modules\User\Controller\UserController@password');
     });
 
-    Router::group(['prefix' => 'home', 'controller' => HomeController::class], function () {
-        Router::add('GET', '/dashboard', 'dashboard');
+    // Dashboard routes
+    Router::group(['prefix' => 'home'], function() {
+        Router::get('/dashboard', 'Modules\Home\Controller\HomeController@dashboard');
     });
 });

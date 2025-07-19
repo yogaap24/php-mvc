@@ -1,50 +1,24 @@
 <?php
 
-use Yogaap\PHP\MVC\Config\Environment;
+require_once __DIR__ . '/../vendor/autoload.php';
 
-// Load environment variables
+use Core\Foundation\Application;
+use Core\Http\Router;
+use App\Config\Environment;
+use App\Providers\CoreServiceProvider;
+use App\Providers\DatabaseServiceProvider;
+
+// Load environment
 Environment::load();
 
-if (!function_exists('dd')) {
-    /**
-     * Dump and die. Outputs information about variables and stops execution.
-     *
-     * @param mixed ...$vars
-     * @return void
-     */
-    function dd(...$vars): void
-    {
-        ob_start();
+// Create application
+$app = new Application();
 
-        echo "<pre style='background: #f8f9fa; padding: 1em; border: 1px solid #dee2e6; border-radius: .25rem;'>";
-        foreach ($vars as $var) {
-            var_export($var);
-            echo "\n";
-        }
+// Register service providers
+$app->registerProvider(new CoreServiceProvider($app->getContainer()));
+$app->registerProvider(new DatabaseServiceProvider($app->getContainer()));
 
-        $error = error_get_last();
-        if ($error) {
-            echo "\n[ERROR]: ";
-            var_export($error);
-        }
+// Set container for static Router
+Router::setContainer($app->getContainer());
 
-        echo "</pre>";
-
-        ob_end_flush();
-        die();
-    }
-}
-
-if (!function_exists('env')) {
-    /**
-     * Get environment variable value
-     *
-     * @param string $key
-     * @param mixed $default
-     * @return mixed
-     */
-    function env(string $key, $default = null)
-    {
-        return Environment::get($key, $default);
-    }
-}
+return $app;

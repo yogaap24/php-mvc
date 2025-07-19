@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-use Yogaap\PHP\MVC\Console\MigrateCommand;
+use Core\Console\MigrateCommand;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -20,7 +20,11 @@ try {
     switch ($namespace) {
         case 'migrate':
             $migrateCommand = new MigrateCommand();
-            $migrateCommand->run($argv);
+            if ($action === 'status') {
+                $migrateCommand->status();
+            } else {
+                $migrateCommand->run();
+            }
             break;
 
         case 'help':
@@ -40,8 +44,8 @@ function showMainHelp(): void
     echo "==================\n\n";
     echo "Available commands:\n";
     echo "  migrate              - Run all pending migrations\n";
-    echo "  migrate:rollback     - Rollback a specific migration\n";
     echo "  migrate:status       - Show migration status\n";
+    echo "  migrate:rollback     - Rollback a specific migration\n";
     echo "  migrate:fresh        - Drop all tables and run migrations\n";
     echo "  help                 - Show this help message\n\n";
     echo "Usage:\n";
